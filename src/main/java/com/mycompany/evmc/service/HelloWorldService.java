@@ -1,4 +1,4 @@
-package com.mycompany.evmc.services;
+package com.mycompany.evmc.service;
 
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.hilla.BrowserCallable;

@@ -1,4 +1,4 @@
-package com.mycompany.evmc.services;
+package com.mycompany.evmc.service;
 
 import com.mycompany.evmc.data.SamplePerson;
 import com.mycompany.evmc.data.SamplePersonRepository;

@@ -1,4 +1,4 @@
 @NonNullApi
-package com.mycompany.evmc.services;
+package com.mycompany.evmc.service;
 
 import org.springframework.lang.NonNullApi;

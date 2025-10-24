@@ -1,7 +1,7 @@
 package com.mycompany.evmc.views.masterdetail;
 
 import com.mycompany.evmc.data.SamplePerson;
-import com.mycompany.evmc.services.SamplePersonService;
+import com.mycompany.evmc.service.SamplePersonService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;

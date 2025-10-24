@@ -1,7 +1,7 @@
 package com.mycompany.evmc.views.gridwithfilters;
 
 import com.mycompany.evmc.data.SamplePerson;
-import com.mycompany.evmc.services.SamplePersonService;
+import com.mycompany.evmc.service.SamplePersonService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
