@@ -10,15 +10,15 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface EmployeeMapper {
 
-    // ✅ Map role enum -> string
-    @Mapping(target = "role", expression = "java(employee.getRole().name())")
+    // Entity -> DTO
+    @Mapping(target = "role", expression = "java(employee.getRole() != null ? employee.getRole().name() : null)")
     EmployeeDto toDto(Employee employee);
 
-    // ✅ Ignore password and other unmapped fields when converting DTO -> Entity
+    // DTO -> Entity
+    @Mapping(target = "role", expression = "java(dto.getRole() != null ? com.mycompany.evmc.model.Role.valueOf(dto.getRole()) : null)")
     @Mapping(target = "passwordHash", ignore = true)
     @Mapping(target = "manager", ignore = true)
     @Mapping(target = "timezone", ignore = true)
-    @Mapping(target = "role", expression = "java(com.mycompany.evmc.model.Role.valueOf(dto.getRole()))")
     Employee toEntity(EmployeeDto dto);
 
     List<EmployeeDto> toDtoList(List<Employee> employees);
