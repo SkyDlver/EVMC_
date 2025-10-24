@@ -36,7 +36,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 @PageTitle("Grid with Filters")
-@Route("")
+@Route("grid-filters/")
 @Menu(order = 0, icon = LineAwesomeIconUrl.FILTER_SOLID)
 @Uses(Icon.class)
 public class GridwithFiltersView extends Div {
