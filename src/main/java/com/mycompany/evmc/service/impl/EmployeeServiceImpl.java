@@ -7,6 +7,7 @@ import com.mycompany.evmc.model.Role;
 import com.mycompany.evmc.repository.EmployeeRepository;
 import com.mycompany.evmc.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -20,6 +21,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final EmployeeMapper employeeMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public List<EmployeeDto> getAllEmployees() {
@@ -39,13 +41,22 @@ public class EmployeeServiceImpl implements EmployeeService {
             throw new IllegalArgumentException("Email already registered");
         }
 
+        // Map DTO to entity
         Employee employee = employeeMapper.toEntity(employeeDto);
+
+        // Set employee number and hired date
         employee.setEmployeeNumber("EMP-" + System.currentTimeMillis());
         employee.setHiredAt(employee.getHiredAt() != null ? employee.getHiredAt() : LocalDate.now());
+
+        // Handle password
+        if (employeeDto.getPassword() != null && !employeeDto.getPassword().isEmpty()) {
+            employee.setPasswordHash(passwordEncoder.encode(employeeDto.getPassword()));
+        }
 
         Employee saved = employeeRepository.save(employee);
         return employeeMapper.toDto(saved);
     }
+
 
     @Override
     public EmployeeDto updateEmployee(UUID id, EmployeeDto employeeDto) {
@@ -58,9 +69,15 @@ public class EmployeeServiceImpl implements EmployeeService {
         existing.setTeam(employeeDto.getTeam());
         existing.setRole(Role.valueOf(employeeDto.getRole()));
 
+        // Update password if provided
+        if (employeeDto.getPassword() != null && !employeeDto.getPassword().isEmpty()) {
+            existing.setPasswordHash(passwordEncoder.encode(employeeDto.getPassword()));
+        }
+
         Employee updated = employeeRepository.save(existing);
         return employeeMapper.toDto(updated);
     }
+
 
     @Override
     public void deleteEmployee(UUID id) {

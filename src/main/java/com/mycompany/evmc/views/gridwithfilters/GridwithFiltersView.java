@@ -102,7 +102,7 @@ public class GridwithFiltersView extends Div {
 
             occupations.setItems("Insurance Clerk", "Mortarman", "Beer Coil Cleaner", "Scale Attendant");
 
-            roles.setItems("Worker", "Supervisor", "Manager", "External");
+            roles.setItems("Employee", "HR", "Manager", "ADMIN");
             roles.addClassName("double-width");
 
             // Action buttons
