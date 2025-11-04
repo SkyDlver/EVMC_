@@ -23,6 +23,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -39,6 +40,7 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 @Route("grid-filters/")
 @Menu(order = 0, icon = LineAwesomeIconUrl.FILTER_SOLID)
 @Uses(Icon.class)
+@AnonymousAllowed
 public class GridwithFiltersView extends Div {
 
     private Grid<SamplePerson> grid;
