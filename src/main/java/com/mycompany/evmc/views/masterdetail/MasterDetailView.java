@@ -2,6 +2,7 @@ package com.mycompany.evmc.views.masterdetail;
 
 import com.mycompany.evmc.dto.EmployeeDto;
 import com.mycompany.evmc.service.EmployeeService;
+import com.mycompany.evmc.views.MainLayout;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -29,8 +30,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 @PageTitle("Employees")
-@Route("employees/:employeeID?/:action?(edit)")
-@RolesAllowed({"ROLE_ADMIN"})
+@Route(value = "employees/:employeeID?/:action?(edit)" ,layout = MainLayout.class)
+@RolesAllowed("ADMIN")
 @Menu(order = 1, icon = LineAwesomeIconUrl.USERS_SOLID)
 @Uses(Icon.class)
 public class MasterDetailView extends Div implements BeforeEnterObserver {

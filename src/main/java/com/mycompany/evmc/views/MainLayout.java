@@ -13,22 +13,25 @@ import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.Layout;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.server.menu.MenuConfiguration;
 import com.vaadin.flow.server.menu.MenuEntry;
+import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import java.util.List;
 
 /**
  * The main view is a top-level placeholder for other views.
  */
-@Layout
-@AnonymousAllowed
+
 public class MainLayout extends AppLayout implements AfterNavigationObserver {
 
     private H1 viewTitle;
+    private final AuthenticationContext auth;
 
-    public MainLayout() {
+    public MainLayout(AuthenticationContext auth) {
+        this.auth = auth;
         setPrimarySection(Section.DRAWER);
         addDrawerContent();
         addHeaderContent();
@@ -41,8 +44,12 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver {
         viewTitle = new H1();
         viewTitle.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
 
-        addToNavbar(true, toggle, viewTitle);
+        Button logout = new Button("Logout", e -> auth.logout());
+        logout.addClassNames(LumoUtility.Margin.Left.AUTO);
+
+        addToNavbar(true, toggle, viewTitle, logout);
     }
+
 
     private void addDrawerContent() {
         Span appName = new Span("My App");
@@ -57,17 +64,20 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver {
     private SideNav createNavigation() {
         SideNav nav = new SideNav();
 
-        List<MenuEntry> menuEntries = MenuConfiguration.getMenuEntries();
-        menuEntries.forEach(entry -> {
-            if (entry.icon() != null) {
-                nav.addItem(new SideNavItem(entry.title(), entry.path(), new SvgIcon(entry.icon())));
-            } else {
-                nav.addItem(new SideNavItem(entry.title(), entry.path()));
+        AuthenticationContext auth = new AuthenticationContext();
+        if (auth.isAuthenticated()) {
+            if (auth.hasRole("EMPLOYEE")) {
+                nav.addItem(new SideNavItem("Profile", "profile"));
             }
-        });
+            if (auth.hasRole("MANAGER")) {
+                nav.addItem(new SideNavItem("Master Detail", "master-detail"));
+                nav.addItem(new SideNavItem("Grid Filters", "grid-filters"));
+            }
+        }
 
         return nav;
     }
+
 
     private Footer createFooter() {
         Footer layout = new Footer();
