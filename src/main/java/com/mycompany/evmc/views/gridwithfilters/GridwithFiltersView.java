@@ -1,7 +1,7 @@
 package com.mycompany.evmc.views.gridwithfilters;
 
-import com.mycompany.evmc.data.SamplePerson;
-import com.mycompany.evmc.service.SamplePersonService;
+import com.mycompany.evmc.dto.EmployeeDto;
+import com.mycompany.evmc.service.EmployeeService;
 import com.mycompany.evmc.views.MainLayout;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
@@ -24,48 +24,52 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import java.util.ArrayList;
-import java.util.List;
-import org.springframework.data.jpa.domain.Specification;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
-@PageTitle("Grid with Filters")
+import java.util.List;
+import java.util.stream.Collectors;
+
+@PageTitle("Employees Directory")
 @Route(value = "/grid-filters", layout = MainLayout.class)
 @Menu(order = 0, icon = LineAwesomeIconUrl.FILTER_SOLID)
 @Uses(Icon.class)
 @RolesAllowed({"EMPLOYEE", "ADMIN", "HR", "MANAGER"})
 public class GridwithFiltersView extends Div {
 
+    private final EmployeeService employeeService;
+    private final Grid<EmployeeDto> grid = new Grid<>(EmployeeDto.class, false);
+    private final Filters filters;
 
-    private Grid<SamplePerson> grid;
-
-    private Filters filters;
-    private final SamplePersonService samplePersonService;
-
-    public GridwithFiltersView(SamplePersonService SamplePersonService) {
-        this.samplePersonService = SamplePersonService;
+    public GridwithFiltersView(EmployeeService employeeService) {
+        this.employeeService = employeeService;
         setSizeFull();
         addClassNames("gridwith-filters-view");
 
-        filters = new Filters(() -> refreshGrid());
-        VerticalLayout layout = new VerticalLayout(createMobileFilters(), filters, createGrid());
+        filters = new Filters(this::refreshGrid);
+        populateTeams();
+
+        VerticalLayout layout = new VerticalLayout(createMobileFilters(), filters, grid);
         layout.setSizeFull();
         layout.setPadding(false);
         layout.setSpacing(false);
         add(layout);
+
+        configureGrid();
+        refreshGrid();
+    }
+
+    private void populateTeams() {
+        List<String> teams = employeeService.getAllEmployees().stream()
+                .map(EmployeeDto::getTeam)
+                .filter(t -> t != null && !t.isBlank())
+                .distinct()
+                .collect(Collectors.toList());
+        filters.teams.setItems(teams);
     }
 
     private HorizontalLayout createMobileFilters() {
-        // Mobile version
         HorizontalLayout mobileFilters = new HorizontalLayout();
         mobileFilters.setWidthFull();
         mobileFilters.addClassNames(LumoUtility.Padding.MEDIUM, LumoUtility.BoxSizing.BORDER,
@@ -88,40 +92,63 @@ public class GridwithFiltersView extends Div {
         return mobileFilters;
     }
 
-    public static class Filters extends Div implements Specification<SamplePerson> {
+    private void configureGrid() {
+        grid.addColumn(EmployeeDto::getFirstName).setHeader("First Name").setAutoWidth(true).setSortable(true);
+        grid.addColumn(EmployeeDto::getLastName).setHeader("Last Name").setAutoWidth(true).setSortable(true);
+        grid.addColumn(EmployeeDto::getEmail).setHeader("Email").setAutoWidth(true).setSortable(true);
+        grid.addColumn(EmployeeDto::getTeam).setHeader("Team").setAutoWidth(true).setSortable(true);
+        grid.addColumn(EmployeeDto::getRole).setHeader("Role").setAutoWidth(true).setSortable(true);
+        grid.addColumn(EmployeeDto::getHiredAt).setHeader("Hired At").setAutoWidth(true).setSortable(true);
+
+        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+        grid.addClassNames(LumoUtility.Border.TOP, LumoUtility.BorderColor.CONTRAST_10);
+        grid.setSizeFull();
+    }
+
+    private void refreshGrid() {
+        List<EmployeeDto> employees = employeeService.getAllEmployees();
+
+        List<EmployeeDto> filtered = employees.stream()
+                .filter(filters::matches)
+                .collect(Collectors.toList());
+
+        grid.setItems(filtered);
+    }
+
+    // === Filters ===
+    public static class Filters extends Div {
 
         private final TextField name = new TextField("Name");
-        private final TextField phone = new TextField("Phone");
-        private final DatePicker startDate = new DatePicker("Date of Birth");
-        private final DatePicker endDate = new DatePicker();
-        private final MultiSelectComboBox<String> occupations = new MultiSelectComboBox<>("Occupation");
+        private final TextField email = new TextField("Email");
+        private final MultiSelectComboBox<String> teams = new MultiSelectComboBox<>("Team");
         private final CheckboxGroup<String> roles = new CheckboxGroup<>("Role");
+        private final DatePicker hiredFrom = new DatePicker("Hired From");
+        private final DatePicker hiredTo = new DatePicker("Hired To");
 
         public Filters(Runnable onSearch) {
-
             setWidthFull();
             addClassName("filter-layout");
-            addClassNames(LumoUtility.Padding.Horizontal.LARGE, LumoUtility.Padding.Vertical.MEDIUM,
+            addClassNames(LumoUtility.Padding.Horizontal.LARGE,
+                    LumoUtility.Padding.Vertical.MEDIUM,
                     LumoUtility.BoxSizing.BORDER);
-            name.setPlaceholder("First or last name");
 
-            occupations.setItems("Insurance Clerk", "Mortarman", "Beer Coil Cleaner", "Scale Attendant");
+            name.setPlaceholder("First or Last name");
+            email.setPlaceholder("Email");
+            roles.setItems("EMPLOYEE", "ADMIN", "HR", "MANAGER");
+            teams.setPlaceholder("Select teams");
 
-            roles.setItems("Employee", "HR", "Manager", "ADMIN");
-            roles.addClassName("double-width");
-
-            // Action buttons
             Button resetBtn = new Button("Reset");
             resetBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
             resetBtn.addClickListener(e -> {
                 name.clear();
-                phone.clear();
-                startDate.clear();
-                endDate.clear();
-                occupations.clear();
+                email.clear();
                 roles.clear();
+                teams.clear();
+                hiredFrom.clear();
+                hiredTo.clear();
                 onSearch.run();
             });
+
             Button searchBtn = new Button("Search");
             searchBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             searchBtn.addClickListener(e -> onSearch.run());
@@ -130,118 +157,45 @@ public class GridwithFiltersView extends Div {
             actions.addClassName(LumoUtility.Gap.SMALL);
             actions.addClassName("actions");
 
-            add(name, phone, createDateRangeFilter(), occupations, roles, actions);
+            add(name, email, teams, roles, createDateRangeFilter(), actions);
         }
 
         private Component createDateRangeFilter() {
-            startDate.setPlaceholder("From");
+            hiredFrom.setPlaceholder("From");
+            hiredTo.setPlaceholder("To");
 
-            endDate.setPlaceholder("To");
+            FlexLayout dateRange = new FlexLayout(hiredFrom, new Text(" – "), hiredTo);
+            dateRange.setAlignItems(FlexComponent.Alignment.BASELINE);
+            dateRange.addClassName(LumoUtility.Gap.XSMALL);
 
-            // For screen readers
-            startDate.setAriaLabel("From date");
-            endDate.setAriaLabel("To date");
-
-            FlexLayout dateRangeComponent = new FlexLayout(startDate, new Text(" – "), endDate);
-            dateRangeComponent.setAlignItems(FlexComponent.Alignment.BASELINE);
-            dateRangeComponent.addClassName(LumoUtility.Gap.XSMALL);
-
-            return dateRangeComponent;
+            return dateRange;
         }
 
-        @Override
-        public Predicate toPredicate(Root<SamplePerson> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
-            List<Predicate> predicates = new ArrayList<>();
+        public boolean matches(EmployeeDto emp) {
+            if (emp == null) return false;
 
+            boolean match = true;
             if (!name.isEmpty()) {
-                String lowerCaseFilter = name.getValue().toLowerCase();
-                Predicate firstNameMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("firstName")),
-                        lowerCaseFilter + "%");
-                Predicate lastNameMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("lastName")),
-                        lowerCaseFilter + "%");
-                predicates.add(criteriaBuilder.or(firstNameMatch, lastNameMatch));
+                String filter = name.getValue().toLowerCase();
+                match &= (emp.getFirstName() != null && emp.getFirstName().toLowerCase().contains(filter))
+                        || (emp.getLastName() != null && emp.getLastName().toLowerCase().contains(filter));
             }
-            if (!phone.isEmpty()) {
-                String databaseColumn = "phone";
-                String ignore = "- ()";
-
-                String lowerCaseFilter = ignoreCharacters(ignore, phone.getValue().toLowerCase());
-                Predicate phoneMatch = criteriaBuilder.like(
-                        ignoreCharacters(ignore, criteriaBuilder, criteriaBuilder.lower(root.get(databaseColumn))),
-                        "%" + lowerCaseFilter + "%");
-                predicates.add(phoneMatch);
-
-            }
-            if (startDate.getValue() != null) {
-                String databaseColumn = "dateOfBirth";
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(databaseColumn),
-                        criteriaBuilder.literal(startDate.getValue())));
-            }
-            if (endDate.getValue() != null) {
-                String databaseColumn = "dateOfBirth";
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(criteriaBuilder.literal(endDate.getValue()),
-                        root.get(databaseColumn)));
-            }
-            if (!occupations.isEmpty()) {
-                String databaseColumn = "occupation";
-                List<Predicate> occupationPredicates = new ArrayList<>();
-                for (String occupation : occupations.getValue()) {
-                    occupationPredicates
-                            .add(criteriaBuilder.equal(criteriaBuilder.literal(occupation), root.get(databaseColumn)));
-                }
-                predicates.add(criteriaBuilder.or(occupationPredicates.toArray(Predicate[]::new)));
+            if (!email.isEmpty()) {
+                match &= emp.getEmail() != null && emp.getEmail().toLowerCase().contains(email.getValue().toLowerCase());
             }
             if (!roles.isEmpty()) {
-                String databaseColumn = "role";
-                List<Predicate> rolePredicates = new ArrayList<>();
-                for (String role : roles.getValue()) {
-                    rolePredicates.add(criteriaBuilder.equal(criteriaBuilder.literal(role), root.get(databaseColumn)));
-                }
-                predicates.add(criteriaBuilder.or(rolePredicates.toArray(Predicate[]::new)));
+                match &= emp.getRole() != null && roles.getValue().contains(emp.getRole().toUpperCase());
             }
-            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
-        }
-
-        private String ignoreCharacters(String characters, String in) {
-            String result = in;
-            for (int i = 0; i < characters.length(); i++) {
-                result = result.replace("" + characters.charAt(i), "");
+            if (!teams.isEmpty()) {
+                match &= emp.getTeam() != null && teams.getValue().contains(emp.getTeam());
             }
-            return result;
-        }
-
-        private Expression<String> ignoreCharacters(String characters, CriteriaBuilder criteriaBuilder,
-                Expression<String> inExpression) {
-            Expression<String> expression = inExpression;
-            for (int i = 0; i < characters.length(); i++) {
-                expression = criteriaBuilder.function("replace", String.class, expression,
-                        criteriaBuilder.literal(characters.charAt(i)), criteriaBuilder.literal(""));
+            if (hiredFrom.getValue() != null) {
+                match &= emp.getHiredAt() != null && !emp.getHiredAt().isBefore(hiredFrom.getValue());
             }
-            return expression;
+            if (hiredTo.getValue() != null) {
+                match &= emp.getHiredAt() != null && !emp.getHiredAt().isAfter(hiredTo.getValue());
+            }
+            return match;
         }
-
     }
-
-    private Component createGrid() {
-        grid = new Grid<>(SamplePerson.class, false);
-        grid.addColumn("firstName").setAutoWidth(true);
-        grid.addColumn("lastName").setAutoWidth(true);
-        grid.addColumn("email").setAutoWidth(true);
-        grid.addColumn("phone").setAutoWidth(true);
-        grid.addColumn("dateOfBirth").setAutoWidth(true);
-        grid.addColumn("occupation").setAutoWidth(true);
-        grid.addColumn("role").setAutoWidth(true);
-
-        grid.setItems(query -> samplePersonService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), filters)
-                .stream());
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
-        grid.addClassNames(LumoUtility.Border.TOP, LumoUtility.BorderColor.CONTRAST_10);
-
-        return grid;
-    }
-
-    private void refreshGrid() {
-        grid.getDataProvider().refreshAll();
-    }
-
 }

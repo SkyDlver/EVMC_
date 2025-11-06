@@ -1,5 +1,6 @@
 package com.mycompany.evmc.repository;
 
+import com.mycompany.evmc.model.Employee;
 import com.mycompany.evmc.model.VacationRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -17,4 +18,7 @@ public interface VacationRequestRepository extends JpaRepository<VacationRequest
     List<VacationRequest> findByApprover_Id(UUID approverId);
 
     List<VacationRequest> findByEmployee_Team(String team);
+
+    List<VacationRequest> findByEmployee(Employee employee);
+    List<VacationRequest> findAllByEmployee(Employee employee);
 }

@@ -93,4 +93,11 @@ public class EmployeeServiceImpl implements EmployeeService {
     public List<EmployeeDto> getEmployeesByTeam(String team) {
         return employeeMapper.toDtoList(employeeRepository.findByTeam(team));
     }
+
+    @Override
+    public Employee findByEmail(String email) {
+        return employeeRepository.findByEmail(email)
+                .orElseThrow(() -> new NoSuchElementException("Employee not found with email: " + email));
+    }
+
 }

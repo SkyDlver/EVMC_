@@ -67,6 +67,7 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver {
         if (auth.isAuthenticated()) {
             if (auth.hasRole("EMPLOYEE")) {
                 nav.addItem(new SideNavItem("Profile", ""));
+                nav.addItem(new SideNavItem("Vacation Request", "request-vacation"));
                 nav.addItem(new SideNavItem("Grid Filters", "grid-filters"));
             }
             if (auth.hasRole("MANAGER")) {

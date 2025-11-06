@@ -21,11 +21,11 @@ public class VacationRequest {
     @GeneratedValue
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "type_id", nullable = false)
     private VacationType type;
 
@@ -47,7 +47,7 @@ public class VacationRequest {
     @Column(nullable = false)
     private String status = "pending"; // pending | approved | rejected | cancelled
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "approver_id")
     private Employee approver;
 
