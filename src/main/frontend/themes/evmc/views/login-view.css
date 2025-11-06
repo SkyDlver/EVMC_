@@ -1,0 +1,9 @@
+.login-view {
+    background-image: url('../images/mybg.png');
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh; /* full height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

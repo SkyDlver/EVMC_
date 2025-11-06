@@ -2,6 +2,7 @@ package com.mycompany.evmc;
 
 import com.mycompany.evmc.data.SamplePersonRepository;
 import com.vaadin.flow.component.page.AppShellConfigurator;
+import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
 import javax.sql.DataSource;
 import org.springframework.boot.SpringApplication;
@@ -19,6 +20,12 @@ import org.springframework.context.annotation.Bean;
  */
 @SpringBootApplication
 @Theme(value = "evmc")
+@PWA(
+        name = "Vaadin CRM",
+        shortName = "CRM",
+        offlinePath="offline.html",
+        offlineResources = { "images/offline.png" }
+)
 public class Application implements AppShellConfigurator {
 
     public static void main(String[] args) {

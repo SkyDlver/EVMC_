@@ -30,11 +30,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 @PageTitle("Employees")
-@Route(value = "employees/:employeeID?/:action?(edit)" ,layout = MainLayout.class)
+@Route(value = "employees/:employeeID?/:action?(edit)", layout = MainLayout.class)
 @RolesAllowed("ADMIN")
 @Menu(order = 1, icon = LineAwesomeIconUrl.USERS_SOLID)
 @Uses(Icon.class)
 public class MasterDetailView extends Div implements BeforeEnterObserver {
+
 
     private final String EMPLOYEE_ID = "employeeID";
     private final String EMPLOYEE_EDIT_ROUTE_TEMPLATE = "employees/%s/edit";

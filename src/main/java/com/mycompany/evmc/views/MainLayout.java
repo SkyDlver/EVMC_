@@ -52,7 +52,7 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver {
 
 
     private void addDrawerContent() {
-        Span appName = new Span("My App");
+        Span appName = new Span("EVMC");
         appName.addClassNames(LumoUtility.FontWeight.SEMIBOLD, LumoUtility.FontSize.LARGE);
         Header header = new Header(appName);
 
@@ -64,19 +64,25 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver {
     private SideNav createNavigation() {
         SideNav nav = new SideNav();
 
-        AuthenticationContext auth = new AuthenticationContext();
         if (auth.isAuthenticated()) {
             if (auth.hasRole("EMPLOYEE")) {
-                nav.addItem(new SideNavItem("Profile", "profile"));
+                nav.addItem(new SideNavItem("Profile", ""));
+                nav.addItem(new SideNavItem("Grid Filters", "grid-filters"));
             }
             if (auth.hasRole("MANAGER")) {
                 nav.addItem(new SideNavItem("Master Detail", "master-detail"));
+                nav.addItem(new SideNavItem("Grid Filters", "grid-filters"));
+            }
+            if (auth.hasRole("ADMIN")) {
+                nav.addItem(new SideNavItem("Profile", ""));
+                nav.addItem(new SideNavItem("Employees", "employees"));
                 nav.addItem(new SideNavItem("Grid Filters", "grid-filters"));
             }
         }
 
         return nav;
     }
+
 
 
     private Footer createFooter() {

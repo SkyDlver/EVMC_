@@ -1,0 +1,9 @@
+[part='brand'] {
+  background-image: url(../images/login-banner.jpg);
+}
+[part="backdrop"] {
+    background-image: url('../images/mybg.png') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+}

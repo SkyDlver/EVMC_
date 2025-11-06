@@ -2,6 +2,7 @@ package com.mycompany.evmc.views.gridwithfilters;
 
 import com.mycompany.evmc.data.SamplePerson;
 import com.mycompany.evmc.service.SamplePersonService;
+import com.mycompany.evmc.views.MainLayout;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
@@ -26,6 +27,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
@@ -37,11 +39,12 @@ import org.springframework.data.jpa.domain.Specification;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 @PageTitle("Grid with Filters")
-@Route("grid-filters/")
+@Route(value = "/grid-filters", layout = MainLayout.class)
 @Menu(order = 0, icon = LineAwesomeIconUrl.FILTER_SOLID)
 @Uses(Icon.class)
-@AnonymousAllowed
+@RolesAllowed({"EMPLOYEE", "ADMIN", "HR", "MANAGER"})
 public class GridwithFiltersView extends Div {
+
 
     private Grid<SamplePerson> grid;
 

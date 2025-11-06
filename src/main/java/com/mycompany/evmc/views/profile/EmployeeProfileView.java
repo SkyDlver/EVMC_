@@ -11,9 +11,10 @@ import com.mycompany.evmc.views.MainLayout;
 import org.springframework.security.core.userdetails.UserDetails;     // or your custom class
 
 @PageTitle("Profile")
-@Route(value = "profile", layout = MainLayout.class)
-@RolesAllowed("EMPLOYEE")
+@Route(value = "/", layout = MainLayout.class)
+@RolesAllowed({"EMPLOYEE", "ADMIN"})
 public class EmployeeProfileView extends VerticalLayout {
+
 
     public EmployeeProfileView(AuthenticationContext authContext) {
         setSpacing(false);
