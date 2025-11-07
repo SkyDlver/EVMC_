@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-@PageTitle("Employees")
+@PageTitle("Xodimlar")
 @Route(value = "employees/:employeeID?/:action?(edit)", layout = MainLayout.class)
 @RolesAllowed("ADMIN")
 @Menu(order = 1, icon = LineAwesomeIconUrl.USERS_SOLID)
@@ -57,8 +57,8 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
     private PasswordField password;
     private Checkbox onHoliday;
 
-    private final Button cancel = new Button("Cancel");
-    private final Button save = new Button("Save");
+    private final Button cancel = new Button("Bekor qilish");
+    private final Button save = new Button("Saqlash");
 
     private final BeanValidationBinder<EmployeeDto> binder;
     private EmployeeDto employeeDto;
@@ -100,20 +100,20 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
     }
 
     private void configureGrid() {
-        grid.addColumn(EmployeeDto::getFirstName).setHeader("First Name").setAutoWidth(true).setSortable(true);
-        grid.addColumn(EmployeeDto::getLastName).setHeader("Last Name").setAutoWidth(true).setSortable(true);
+        grid.addColumn(EmployeeDto::getFirstName).setHeader("Ism").setAutoWidth(true).setSortable(true);
+        grid.addColumn(EmployeeDto::getLastName).setHeader("Familiya").setAutoWidth(true).setSortable(true);
         grid.addColumn(EmployeeDto::getEmail).setHeader("Email").setAutoWidth(true).setSortable(true);
-        grid.addColumn(EmployeeDto::getRole).setHeader("Role").setAutoWidth(true).setSortable(true);
-        grid.addColumn(EmployeeDto::getHiredAt).setHeader("Hired At").setAutoWidth(true).setSortable(true);
-        grid.addColumn(EmployeeDto::getHolidayStartDate).setHeader("Holiday Start").setAutoWidth(true);
-        grid.addColumn(EmployeeDto::getHolidayEndDate).setHeader("Holiday End").setAutoWidth(true);
+        grid.addColumn(EmployeeDto::getRole).setHeader("Lavozim").setAutoWidth(true).setSortable(true);
+        grid.addColumn(EmployeeDto::getHiredAt).setHeader("Ishga olingan sana").setAutoWidth(true).setSortable(true);
+        grid.addColumn(EmployeeDto::getHolidayStartDate).setHeader("Ta’til boshlanishi").setAutoWidth(true);
+        grid.addColumn(EmployeeDto::getHolidayEndDate).setHeader("Ta’til tugashi").setAutoWidth(true);
 
         LitRenderer<EmployeeDto> onHolidayRenderer = LitRenderer.<EmployeeDto>of(
                         "<vaadin-icon icon='vaadin:${item.icon}' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
                 .withProperty("icon", emp -> emp.isOnHoliday() ? "check" : "minus")
                 .withProperty("color", emp -> emp.isOnHoliday() ? "var(--lumo-primary-text-color)" : "var(--lumo-disabled-text-color)");
 
-        grid.addColumn(onHolidayRenderer).setHeader("On Holiday").setAutoWidth(true);
+        grid.addColumn(onHolidayRenderer).setHeader("Ta’tilda").setAutoWidth(true);
 
         List<EmployeeDto> employees = employeeService.getAllEmployees();
         dataProvider = new ListDataProvider<>(employees);
@@ -122,9 +122,10 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
         grid.setSizeFull();
 
         grid.asSingleSelect().addValueChangeListener(event -> {
-            if (event.getValue() != null) {
-                populateForm(event.getValue());
-                UI.getCurrent().navigate(String.format(EMPLOYEE_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
+            EmployeeDto selected = event.getValue();
+            if (selected != null) {
+                populateForm(selected);
+                UI.getCurrent().navigate(String.format(EMPLOYEE_EDIT_ROUTE_TEMPLATE, selected.getId()));
             } else {
                 clearForm();
                 UI.getCurrent().navigate(MasterDetailView.class);
@@ -140,7 +141,7 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
                 EmployeeDto emp = employeeService.getEmployeeById(id);
                 populateForm(emp);
             } catch (Exception ex) {
-                Notification.show("Employee not found").addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Notification.show("Xodim topilmadi").addThemeVariants(NotificationVariant.LUMO_ERROR);
                 refreshGrid();
                 event.forwardTo(MasterDetailView.class);
             }
@@ -156,15 +157,15 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
         FormLayout formLayout = new FormLayout();
         formLayout.setWidthFull();
 
-        firstName = new TextField("First Name");
-        lastName = new TextField("Last Name");
+        firstName = new TextField("Ism");
+        lastName = new TextField("Familiya");
         email = new TextField("Email");
-        role = new TextField("Role");
-        hiredAt = new DatePicker("Hired At");
-        holidayStartDate = new DatePicker("Holiday Start");
-        holidayEndDate = new DatePicker("Holiday End");
-        password = new PasswordField("Password");
-        onHoliday = new Checkbox("On Holiday");
+        role = new TextField("Lavozim");
+        hiredAt = new DatePicker("Ishga olingan sana");
+        holidayStartDate = new DatePicker("Ta’til boshlanishi");
+        holidayEndDate = new DatePicker("Ta’til tugashi");
+        password = new PasswordField("Parol");
+        onHoliday = new Checkbox("Ta’tilda");
 
         formLayout.add(firstName, lastName, email, role, hiredAt, holidayStartDate, holidayEndDate, password, onHoliday);
         editorLayout.add(formLayout);
@@ -189,35 +190,32 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
         try {
             binder.writeBean(employeeDto);
 
-            // Password handling with hashing
             if (password.getValue() != null && !password.getValue().isEmpty()) {
                 employeeDto.setPassword(passwordEncoder.encode(password.getValue()));
             } else if (employeeDto.getId() == null) {
-                Notification.show("Password required for new employee", 3000, Notification.Position.MIDDLE)
+                Notification.show("Yangi xodim uchun parol kiritish shart", 3000, Notification.Position.MIDDLE)
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return;
             }
 
-            // Holiday logic
             if (employeeDto.isOnHoliday()) {
                 LocalDate start = employeeDto.getHolidayStartDate();
                 LocalDate end = employeeDto.getHolidayEndDate();
 
                 if (start == null || end == null) {
-                    Notification.show("Please set both holiday start and end dates", 3000, Notification.Position.MIDDLE)
+                    Notification.show("Iltimos, ta’tilning boshlanish va tugash sanalarini kiriting", 3000, Notification.Position.MIDDLE)
                             .addThemeVariants(NotificationVariant.LUMO_ERROR);
                     return;
                 }
 
-                // NEW: Validate that end date is after start date
                 if (end.isBefore(start)) {
-                    Notification.show("Holiday end date cannot be before start date", 3000, Notification.Position.MIDDLE)
+                    Notification.show("Ta’til tugash sanasi boshlanish sanasidan oldin bo‘lishi mumkin emas", 3000, Notification.Position.MIDDLE)
                             .addThemeVariants(NotificationVariant.LUMO_ERROR);
                     return;
                 }
 
                 if (!employeeService.isHolidayEligible(employeeDto.getId(), start)) {
-                    Notification.show("Employee is not eligible for holiday yet (10-month rule)", 3000, Notification.Position.MIDDLE)
+                    Notification.show("Xodim hali ta’til olish huquqiga ega emas (10 oylik qoidasi)", 3000, Notification.Position.MIDDLE)
                             .addThemeVariants(NotificationVariant.LUMO_ERROR);
                     return;
                 }
@@ -227,8 +225,6 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
                 employeeService.endHoliday(employeeDto.getId());
             }
 
-
-            // Create or update
             if (employeeDto.getId() == null) {
                 employeeService.createEmployee(employeeDto);
             } else {
@@ -237,14 +233,14 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
 
             clearForm();
             refreshGrid();
-            Notification.show("Employee saved").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            Notification.show("Xodim ma’lumotlari saqlandi").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             UI.getCurrent().navigate(MasterDetailView.class);
 
         } catch (ValidationException e) {
-            Notification.show("Check the form fields", 3000, Notification.Position.MIDDLE)
+            Notification.show("Iltimos, maydonlarni tekshiring", 3000, Notification.Position.MIDDLE)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         } catch (Exception e) {
-            Notification.show("Unexpected error: " + e.getMessage(), 3000, Notification.Position.MIDDLE)
+            Notification.show("Kutilmagan xato: " + e.getMessage(), 3000, Notification.Position.MIDDLE)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
     }
@@ -260,11 +256,7 @@ public class MasterDetailView extends Div implements BeforeEnterObserver {
     }
 
     private void populateForm(EmployeeDto value) {
-        if (value == null) {
-            this.employeeDto = new EmployeeDto();
-        } else {
-            this.employeeDto = value;
-        }
+        this.employeeDto = value != null ? value : new EmployeeDto();
         binder.readBean(employeeDto);
         onHoliday.setValue(employeeDto.isOnHoliday());
         password.clear();

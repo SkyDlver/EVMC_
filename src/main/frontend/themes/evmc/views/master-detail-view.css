@@ -42,16 +42,15 @@
 .master-detail-view .grid-wrapper {
   width: 100%;
 }
-/* Green = allowed */
-.holiday-start::part(day) {
-    background-color: green;
-    color: white;
+
+/* Start date highlight */
+.holiday-start {
+    background-color: var(--lumo-success-color-50pct);
     border-radius: 50%;
 }
 
-/* Red = blocked */
-.holiday-end::part(day) {
-    background-color: red;
-    color: white;
+/* End date highlight */
+.holiday-end {
+    background-color: var(--lumo-error-color-50pct);
     border-radius: 50%;
 }
