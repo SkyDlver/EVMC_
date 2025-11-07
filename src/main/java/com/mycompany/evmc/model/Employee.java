@@ -1,6 +1,5 @@
 package com.mycompany.evmc.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,9 +21,6 @@ public class Employee {
     @GeneratedValue
     private UUID id;
 
-    @Column(unique = true, nullable = false)
-    private String employeeNumber;
-
     @Column(nullable = false)
     private String firstName;
 
@@ -37,19 +33,17 @@ public class Employee {
     @Column(nullable = false)
     private String passwordHash;
 
-    @ManyToOne
-    @JoinColumn(name = "manager_id")
-    @JsonBackReference
-    private Employee manager;
-
-    private String team;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
 
     private LocalDate hiredAt;
 
+    @Column(nullable = false)
     @Builder.Default
-    private String timezone = "UTC";
+    private boolean onHoliday = false;
+
+    private LocalDate holidayStartDate;
+
+    private LocalDate holidayEndDate;
 }

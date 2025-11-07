@@ -3,6 +3,7 @@ package com.mycompany.evmc.service;
 import com.mycompany.evmc.dto.EmployeeDto;
 import com.mycompany.evmc.model.Employee;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,9 +19,11 @@ public interface EmployeeService {
 
     void deleteEmployee(UUID id);
 
-    List<EmployeeDto> getEmployeesByManager(UUID managerId);
-
-    List<EmployeeDto> getEmployeesByTeam(String team);
-
     Employee findByEmail(String username);
+
+    // ✅ New holiday methods
+    void startHoliday(UUID id, LocalDate startDate, LocalDate endDate);
+    void endHoliday(UUID id);
+
+    boolean isHolidayEligible(UUID employeeId, LocalDate proposedStart);
 }

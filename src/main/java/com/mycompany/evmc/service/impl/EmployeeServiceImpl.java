@@ -45,7 +45,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeMapper.toEntity(employeeDto);
 
         // Set employee number and hired date
-        employee.setEmployeeNumber("EMP-" + System.currentTimeMillis());
         employee.setHiredAt(employee.getHiredAt() != null ? employee.getHiredAt() : LocalDate.now());
 
         // Handle password
@@ -66,7 +65,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         existing.setFirstName(employeeDto.getFirstName());
         existing.setLastName(employeeDto.getLastName());
         existing.setEmail(employeeDto.getEmail());
-        existing.setTeam(employeeDto.getTeam());
         existing.setRole(Role.valueOf(employeeDto.getRole()));
 
         // Update password if provided
@@ -84,20 +82,60 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeRepository.deleteById(id);
     }
 
-    @Override
-    public List<EmployeeDto> getEmployeesByManager(UUID managerId) {
-        return employeeMapper.toDtoList(employeeRepository.findByManager_Id(managerId));
-    }
-
-    @Override
-    public List<EmployeeDto> getEmployeesByTeam(String team) {
-        return employeeMapper.toDtoList(employeeRepository.findByTeam(team));
-    }
 
     @Override
     public Employee findByEmail(String email) {
         return employeeRepository.findByEmail(email)
                 .orElseThrow(() -> new NoSuchElementException("Employee not found with email: " + email));
+    }
+
+
+    @Override
+    public void startHoliday(UUID id, LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            throw new IllegalArgumentException("Holiday start and end dates required");
+        }
+
+        if (!isHolidayEligible(id, startDate)) {
+            throw new IllegalStateException("Employee cannot take holiday yet (10-month rule)");
+        }
+
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Employee not found"));
+
+        employee.setOnHoliday(true);
+        employee.setHolidayStartDate(startDate);
+        employee.setHolidayEndDate(endDate);
+
+        employeeRepository.save(employee);
+    }
+
+
+    @Override
+    public void endHoliday(UUID id) {
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Employee not found with id: " + id));
+
+        employee.setOnHoliday(false);
+        employee.setHolidayStartDate(null);
+        employee.setHolidayEndDate(null);
+
+        employeeRepository.save(employee);
+    }
+
+    @Override
+    public boolean isHolidayEligible(UUID employeeId, LocalDate proposedStart) {
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new NoSuchElementException("Employee not found"));
+
+        LocalDate now = LocalDate.now();
+        LocalDate hireEligibleDate = employee.getHiredAt().plusMonths(10);
+        LocalDate lastHolidayEligibleDate = employee.getHolidayEndDate() != null
+                ? employee.getHolidayEndDate().plusMonths(10)
+                : hireEligibleDate;
+
+        // Employee eligible only if proposedStart >= both thresholds
+        return !proposedStart.isBefore(hireEligibleDate) && !proposedStart.isBefore(lastHolidayEligibleDate);
     }
 
 }

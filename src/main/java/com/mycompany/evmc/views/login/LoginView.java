@@ -22,7 +22,7 @@ public class LoginView extends LoginOverlay
         i18n.getHeader().setTitle("Welcome to EVMC");
         i18n.getHeader().setDescription("""
                 Sign in to continue\s
-                jordan.miccinesi@duod.gy + hashed123
+                nafisa.abdullayeva@evmc.uz + 1234
                 gary.baker@ji.cf + hashed123""");
         // Customize i18n texts
         i18n.setForm(new LoginI18n.Form());

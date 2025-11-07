@@ -19,28 +19,8 @@ public class AppConfig {
     private final EmployeeRepository employeeRepository;
 
     @Bean
-    public UserDetailsService userDetailsService() {
-        return username -> employeeRepository.findByEmail(username)
-                .map(CustomEmployeeDetails::new)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + username));
-    }
-
-    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public AuthenticationProvider authenticationProvider(UserDetailsService uds,
-                                                         PasswordEncoder encoder) {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(uds);
-        provider.setPasswordEncoder(encoder);
-        return provider;
-    }
-
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
 }

@@ -21,6 +21,7 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.LitRenderer;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
 @Route(value = "/grid-filters", layout = MainLayout.class)
 @Menu(order = 0, icon = LineAwesomeIconUrl.FILTER_SOLID)
 @Uses(Icon.class)
-@RolesAllowed({"EMPLOYEE", "ADMIN", "HR", "MANAGER"})
+@RolesAllowed({"EMPLOYEE", "ADMIN"})
 public class GridwithFiltersView extends Div {
 
     private final EmployeeService employeeService;
@@ -48,7 +49,6 @@ public class GridwithFiltersView extends Div {
         addClassNames("gridwith-filters-view");
 
         filters = new Filters(this::refreshGrid);
-        populateTeams();
 
         VerticalLayout layout = new VerticalLayout(createMobileFilters(), filters, grid);
         layout.setSizeFull();
@@ -58,15 +58,6 @@ public class GridwithFiltersView extends Div {
 
         configureGrid();
         refreshGrid();
-    }
-
-    private void populateTeams() {
-        List<String> teams = employeeService.getAllEmployees().stream()
-                .map(EmployeeDto::getTeam)
-                .filter(t -> t != null && !t.isBlank())
-                .distinct()
-                .collect(Collectors.toList());
-        filters.teams.setItems(teams);
     }
 
     private HorizontalLayout createMobileFilters() {
@@ -96,9 +87,19 @@ public class GridwithFiltersView extends Div {
         grid.addColumn(EmployeeDto::getFirstName).setHeader("First Name").setAutoWidth(true).setSortable(true);
         grid.addColumn(EmployeeDto::getLastName).setHeader("Last Name").setAutoWidth(true).setSortable(true);
         grid.addColumn(EmployeeDto::getEmail).setHeader("Email").setAutoWidth(true).setSortable(true);
-        grid.addColumn(EmployeeDto::getTeam).setHeader("Team").setAutoWidth(true).setSortable(true);
         grid.addColumn(EmployeeDto::getRole).setHeader("Role").setAutoWidth(true).setSortable(true);
         grid.addColumn(EmployeeDto::getHiredAt).setHeader("Hired At").setAutoWidth(true).setSortable(true);
+
+        // --- onHoliday column with checkmark ---
+        LitRenderer<EmployeeDto> onHolidayRenderer = LitRenderer.<EmployeeDto>of(
+                        "<vaadin-icon icon='vaadin:${item.icon}' " +
+                                "style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
+                .withProperty("icon", emp -> emp.isOnHoliday() ? "check" : "minus")
+                .withProperty("color", emp -> emp.isOnHoliday()
+                        ? "var(--lumo-primary-text-color)"
+                        : "var(--lumo-disabled-text-color)");
+
+        grid.addColumn(onHolidayRenderer).setHeader("On Holiday").setAutoWidth(true);
 
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
         grid.addClassNames(LumoUtility.Border.TOP, LumoUtility.BorderColor.CONTRAST_10);
@@ -134,7 +135,7 @@ public class GridwithFiltersView extends Div {
 
             name.setPlaceholder("First or Last name");
             email.setPlaceholder("Email");
-            roles.setItems("EMPLOYEE", "ADMIN", "HR", "MANAGER");
+            roles.setItems("EMPLOYEE", "ADMIN");
             teams.setPlaceholder("Select teams");
 
             Button resetBtn = new Button("Reset");
@@ -185,9 +186,6 @@ public class GridwithFiltersView extends Div {
             }
             if (!roles.isEmpty()) {
                 match &= emp.getRole() != null && roles.getValue().contains(emp.getRole().toUpperCase());
-            }
-            if (!teams.isEmpty()) {
-                match &= emp.getTeam() != null && teams.getValue().contains(emp.getTeam());
             }
             if (hiredFrom.getValue() != null) {
                 match &= emp.getHiredAt() != null && !emp.getHiredAt().isBefore(hiredFrom.getValue());

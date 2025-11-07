@@ -14,12 +14,13 @@ import java.util.UUID;
 @Builder
 public class EmployeeDto {
     private UUID id;
-    private String employeeNumber;
     private String firstName;
     private String lastName;
-    private String password;
     private String email;
-    private String team;
-    private String role;
+    private String password; // for input only, will be hashed in entity
+    private String role; // store role as String
     private LocalDate hiredAt;
+    private boolean onHoliday;
+    private LocalDate holidayStartDate;
+    private LocalDate holidayEndDate;
 }
