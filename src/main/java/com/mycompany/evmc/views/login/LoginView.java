@@ -22,14 +22,14 @@ public class LoginView extends LoginOverlay
         i18n.getHeader().setTitle("EVMC tizimiga xush kelibsiz");
         i18n.getHeader().setDescription("""
                 Davom etish uchun tizimga kiring
-                Misol: nafisa.abdullayeva@evmc.uz / 1234
-                yoki gary.baker@ji.cf / hashed123
+                Misol: aziz.karimov / 1234
+                yoki dilshod.rasulov / hashed123
                 """);
 
         // Forma matnlari
         i18n.setForm(new LoginI18n.Form());
         i18n.getForm().setTitle("Tizimga kirish");
-        i18n.getForm().setUsername("Elektron pochta");
+        i18n.getForm().setUsername("Username");
         i18n.getForm().setPassword("Parol");
         i18n.getForm().setSubmit("Kirish");
 

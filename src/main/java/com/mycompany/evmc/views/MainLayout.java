@@ -3,14 +3,14 @@ package com.mycompany.evmc.views;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
-import com.vaadin.flow.component.html.Footer;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.Header;
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.dom.ThemeList;
@@ -53,22 +53,35 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver {
     }
 
     private void addHeaderContent() {
+        // Drawer toggle
         DrawerToggle toggle = new DrawerToggle();
         toggle.setAriaLabel("Menyu almashtirish");
 
+        // View title
         viewTitle = new H1(getTranslation("app.title", "My-App"));
         viewTitle.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
 
-        // Theme toggle
+        // Theme toggle button
         Button themeToggle = new Button(new Icon("vaadin", "moon"));
         themeToggle.setAriaLabel("Toggle dark/light theme");
+
+        // Apply current theme from localStorage on page load
+        UI.getCurrent().getPage().executeJs(
+                "if(localStorage.getItem('theme') === 'dark') { document.body.setAttribute('theme', 'dark'); }"
+        );
+
         themeToggle.addClickListener(e -> {
             ThemeList themeList = UI.getCurrent().getElement().getThemeList();
-            if (themeList.contains(Lumo.DARK)) themeList.remove(Lumo.DARK);
-            else themeList.add(Lumo.DARK);
+            if (themeList.contains(Lumo.DARK)) {
+                themeList.remove(Lumo.DARK);
+                UI.getCurrent().getPage().executeJs("localStorage.setItem('theme', 'light');");
+            } else {
+                themeList.add(Lumo.DARK);
+                UI.getCurrent().getPage().executeJs("localStorage.setItem('theme', 'dark');");
+            }
         });
 
-        // Language toggle
+        // Language toggle button
         Button langToggle = new Button(UI.getCurrent().getLocale().getLanguage().equals("en") ? "EN" : "UZ");
         langToggle.setAriaLabel("Toggle language");
         langToggle.addClickListener(e -> {
@@ -84,55 +97,86 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver {
             ui.getPage().reload();
         });
 
-        // Logout button
-        Button logout = new Button("Chiqish", e -> auth.logout());
+        // Cog button with context menu
+        Button cogButton = new Button(new Icon(VaadinIcon.COG));
+        cogButton.setAriaLabel("Settings menu");
+        cogButton.getStyle().set("min-width", "auto");
+        cogButton.getStyle().set("padding", "0.25em");
+        cogButton.getStyle().set("margin-right", "0.5em");
 
-        // Put everything in one HorizontalLayout
-        HorizontalLayout headerLayout = new HorizontalLayout(toggle, viewTitle, themeToggle, langToggle, logout);
+        ContextMenu cogMenu = new ContextMenu(cogButton);
+        cogMenu.setOpenOnClick(true);
+        cogMenu.addItem("Profil", e -> UI.getCurrent().navigate("/"));
+        cogMenu.addItem("Chiqish", e -> auth.logout());
+
+        // Assemble header layout
+        HorizontalLayout headerLayout = new HorizontalLayout(toggle, viewTitle, themeToggle, langToggle, cogButton);
         headerLayout.setWidthFull();
-        headerLayout.expand(viewTitle); // makes viewTitle take all space, pushing logout to right
+        headerLayout.expand(viewTitle); // title takes remaining space
         headerLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         headerLayout.setPadding(false);
-        headerLayout.setSpacing(true); // optional spacing between buttons
+        headerLayout.setSpacing(true);
 
         addToNavbar(headerLayout);
     }
 
 
+
     /** Yon menyu tarkibi */
     private void addDrawerContent() {
-        Span appName = new Span("Xodimlarning ta’tilni boshqarish tizimi");
-        appName.addClassNames(LumoUtility.FontWeight.SEMIBOLD, LumoUtility.FontSize.LARGE);
+        // Create a vertical layout to hold image + text
+        VerticalLayout headerLayout = new VerticalLayout();
+        headerLayout.setPadding(false);
+        headerLayout.setSpacing(false);
+        headerLayout.setAlignItems(FlexComponent.Alignment.CENTER);
 
-        Header header = new Header(appName);
+        // Add image from resources
+        Image gerbImage = new Image("themes/evmc/images/gerb.png", "Gerb");
+        gerbImage.setWidth("128px");
+        gerbImage.setHeight("128px");
+        gerbImage.getStyle().set("margin-top", "5px");
+
+        // App name
+        Span appName = new Span("Xodimlarning ta’tilni boshqarish tizimi");
+        appName.addClassNames(LumoUtility.FontWeight.SEMIBOLD, LumoUtility.FontSize.LARGE, LumoUtility.Margin.Top.MEDIUM);
+
+        headerLayout.add(gerbImage, appName);
+
+        Header header = new Header(headerLayout);
         Scroller scroller = new Scroller(createNavigation());
         Footer footer = createFooter();
 
         addToDrawer(header, scroller, footer);
     }
 
-    /** Yon menyu navigatsiyasi */
-    private SideNav createNavigation() {
-        SideNav nav = new SideNav();
 
-        if (auth.isAuthenticated()) {
-            if (auth.hasRole("EMPLOYEE")) {
-                nav.addItem(new SideNavItem("Profil", ""));
-                nav.addItem(new SideNavItem("Filtrlar", "grid-filters"));
-                nav.addItem(new SideNavItem("Xodim ma’lumotlari", "master-detail"));
-                nav.addItem(new SideNavItem("Xodimlar ro‘yxati", "employees"));
+
+        /** Yon menyu navigatsiyasi */
+        private SideNav createNavigation() {
+            SideNav nav = new SideNav();
+
+            if (auth.isAuthenticated()) {
+
+                // Common for all authenticated users
+                nav.addItem(new SideNavItem("Profil", "/"));
+
+                // Only VIEWER, ADMIN, and MANAGER can see filters
+                if (auth.hasRole("VIEWER") || auth.hasRole("ADMIN") || auth.hasRole("MANAGER")) {
+                    nav.addItem(new SideNavItem("Filtrlar", "grid-filters"));
+                }
+
+
+                // Only ADMIN or MANAGER can see Xodimlar
+                if (auth.hasRole("ADMIN") || auth.hasRole("MANAGER")) {
+                    nav.addItem(new SideNavItem("Xodimlar", "employees"));
+                }
+
+            } else {
+                nav.addItem(new SideNavItem("Kirish", "login"));
             }
-            if (auth.hasRole("ADMIN")) {
-                nav.addItem(new SideNavItem("Profil", ""));
-                nav.addItem(new SideNavItem("Xodimlar", "employees"));
-                nav.addItem(new SideNavItem("Filtrlar", "grid-filters"));
-            }
-        } else {
-            nav.addItem(new SideNavItem("Kirish", "login"));
+
+            return nav;
         }
-
-        return nav;
-    }
 
     /** Pastki qism (footer) */
     private Footer createFooter() {

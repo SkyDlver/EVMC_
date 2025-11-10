@@ -49,6 +49,14 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         existing.setFirstName(employeeDto.getFirstName());
         existing.setLastName(employeeDto.getLastName());
+        existing.setSurName(employeeDto.getSurName());
+        existing.setDepartment(employeeDto.getDepartment());
+        existing.setEmployeeRole(employeeDto.getEmployeeRole());
+        existing.setGender(employeeDto.getGender());
+        existing.setHiredAt(employeeDto.getHiredAt());
+        existing.setOnHoliday(employeeDto.isOnHoliday());
+        existing.setHolidayStartDate(employeeDto.getHolidayStartDate());
+        existing.setHolidayEndDate(employeeDto.getHolidayEndDate());
 
         Employee updated = employeeRepository.save(existing);
         return employeeMapper.toDto(updated);

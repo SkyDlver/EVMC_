@@ -1,6 +1,8 @@
 package com.mycompany.evmc.views.gridwithfilters;
 
 import com.mycompany.evmc.dto.EmployeeDto;
+import com.mycompany.evmc.model.EmployeeRole;
+import com.mycompany.evmc.model.Gender;
 import com.mycompany.evmc.service.EmployeeService;
 import com.mycompany.evmc.views.MainLayout;
 import com.vaadin.flow.component.Component;
@@ -29,14 +31,15 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.RolesAllowed;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@PageTitle("Employees Directory")
+@PageTitle("Xodimlar Qidiruv Bo'limi")
 @Route(value = "/grid-filters", layout = MainLayout.class)
 @Menu(order = 0, icon = LineAwesomeIconUrl.FILTER_SOLID)
 @Uses(Icon.class)
-@RolesAllowed({"EMPLOYEE", "ADMIN"})
+@RolesAllowed({"ADMIN", "MANAGER", "VIEWER"})
 public class GridwithFiltersView extends Div {
 
     private final EmployeeService employeeService;
@@ -50,7 +53,7 @@ public class GridwithFiltersView extends Div {
 
         filters = new Filters(this::refreshGrid);
 
-        VerticalLayout layout = new VerticalLayout(createMobileFilters(), filters, grid);
+        VerticalLayout layout = new VerticalLayout(filters, grid);
         layout.setSizeFull();
         layout.setPadding(false);
         layout.setSpacing(false);
@@ -60,46 +63,86 @@ public class GridwithFiltersView extends Div {
         refreshGrid();
     }
 
-    private HorizontalLayout createMobileFilters() {
-        HorizontalLayout mobileFilters = new HorizontalLayout();
-        mobileFilters.setWidthFull();
-        mobileFilters.addClassNames(LumoUtility.Padding.MEDIUM, LumoUtility.BoxSizing.BORDER,
-                LumoUtility.AlignItems.CENTER);
-        mobileFilters.addClassName("mobile-filters");
-
-        Icon mobileIcon = new Icon("lumo", "plus");
-        Span filtersHeading = new Span("Filters");
-        mobileFilters.add(mobileIcon, filtersHeading);
-        mobileFilters.setFlexGrow(1, filtersHeading);
-        mobileFilters.addClickListener(e -> {
-            if (filters.getClassNames().contains("visible")) {
-                filters.removeClassName("visible");
-                mobileIcon.getElement().setAttribute("icon", "lumo:plus");
-            } else {
-                filters.addClassName("visible");
-                mobileIcon.getElement().setAttribute("icon", "lumo:minus");
-            }
-        });
-        return mobileFilters;
-    }
-
     private void configureGrid() {
-        grid.addColumn(EmployeeDto::getFirstName).setHeader("First Name").setAutoWidth(true).setSortable(true);
-        grid.addColumn(EmployeeDto::getLastName).setHeader("Last Name").setAutoWidth(true).setSortable(true);
-        grid.addColumn(EmployeeDto::getEmail).setHeader("Email").setAutoWidth(true).setSortable(true);
-        grid.addColumn(EmployeeDto::getRole).setHeader("Role").setAutoWidth(true).setSortable(true);
-        grid.addColumn(EmployeeDto::getHiredAt).setHeader("Hired At").setAutoWidth(true).setSortable(true);
+        // Columns matching MasterDetail view
+        grid.addColumn(EmployeeDto::getFirstName)
+                .setHeader("Ism")
+                .setAutoWidth(true)
+                .setSortable(true);
 
-        // --- onHoliday column with checkmark ---
+        grid.addColumn(EmployeeDto::getLastName)
+                .setHeader("Familiya")
+                .setAutoWidth(true)
+                .setSortable(true);
+
+        grid.addColumn(EmployeeDto::getSurName)
+                .setHeader("Otasining ismi")
+                .setAutoWidth(true)
+                .setSortable(true);
+
+        grid.addColumn(EmployeeDto::getDepartment)
+                .setHeader("Bo‘lim")
+                .setAutoWidth(true)
+                .setSortable(true);
+
+        grid.addColumn(emp -> emp.getGender() != null ? emp.getGender().name() : "")
+                .setHeader("Jinsi")
+                .setAutoWidth(true)
+                .setSortable(true);
+
+        grid.addColumn(EmployeeDto::getEmployeeRole)
+                .setHeader("Lavozim")
+                .setAutoWidth(true)
+                .setSortable(true);
+
+        grid.addColumn(EmployeeDto::getHiredAt)
+                .setHeader("Ishga olingan sana")
+                .setAutoWidth(true)
+                .setSortable(true);
+
+        grid.addColumn(EmployeeDto::getHolidayStartDate)
+                .setHeader("Ta’til boshlanishi")
+                .setAutoWidth(true)
+                .setSortable(true);
+
+        grid.addColumn(EmployeeDto::getHolidayEndDate)
+                .setHeader("Ta’til tugashi")
+                .setAutoWidth(true)
+                .setSortable(true);
+
+        grid.addColumn(emp -> {
+                    if (emp.getHolidayStartDate() != null && emp.getHolidayEndDate() != null) {
+                        return emp.getHolidayEndDate().toEpochDay() - emp.getHolidayStartDate().toEpochDay();
+                    }
+                    return null;
+                })
+                .setHeader("(kun)")
+                .setAutoWidth(true)
+                .setSortable(true);
+
+        grid.addColumn(emp -> {
+                    if (emp.getHolidayEndDate() != null) {
+                        return emp.getHolidayEndDate().plusMonths(10);
+                    } else if (emp.getHiredAt() != null) {
+                        return emp.getHiredAt().plusMonths(10);
+                    } else {
+                        return null;
+                    }
+                })
+                .setHeader("Keyingi ta’til")
+                .setAutoWidth(true)
+                .setSortable(true);
+
         LitRenderer<EmployeeDto> onHolidayRenderer = LitRenderer.<EmployeeDto>of(
                         "<vaadin-icon icon='vaadin:${item.icon}' " +
                                 "style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
                 .withProperty("icon", emp -> emp.isOnHoliday() ? "check" : "minus")
-                .withProperty("color", emp -> emp.isOnHoliday()
-                        ? "var(--lumo-primary-text-color)"
-                        : "var(--lumo-disabled-text-color)");
+                .withProperty("color", emp -> emp.isOnHoliday() ? "var(--lumo-success-color)" : "var(--lumo-disabled-text-color)");
 
-        grid.addColumn(onHolidayRenderer).setHeader("On Holiday").setAutoWidth(true);
+        grid.addColumn(onHolidayRenderer)
+                .setHeader("Ta’tilda")
+                .setAutoWidth(true)
+                .setSortable(true);
 
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
         grid.addClassNames(LumoUtility.Border.TOP, LumoUtility.BorderColor.CONTRAST_10);
@@ -108,23 +151,21 @@ public class GridwithFiltersView extends Div {
 
     private void refreshGrid() {
         List<EmployeeDto> employees = employeeService.getAllEmployees();
-
         List<EmployeeDto> filtered = employees.stream()
                 .filter(filters::matches)
                 .collect(Collectors.toList());
-
         grid.setItems(filtered);
     }
 
     // === Filters ===
     public static class Filters extends Div {
 
-        private final TextField name = new TextField("Name");
-        private final TextField email = new TextField("Email");
-        private final MultiSelectComboBox<String> teams = new MultiSelectComboBox<>("Team");
-        private final CheckboxGroup<String> roles = new CheckboxGroup<>("Role");
-        private final DatePicker hiredFrom = new DatePicker("Hired From");
-        private final DatePicker hiredTo = new DatePicker("Hired To");
+        private final TextField nameField = new TextField("Ism/Familiya/Otasining ismi");
+        private final TextField department = new TextField("Bo‘lim");
+        private final MultiSelectComboBox<Gender> genders = new MultiSelectComboBox<>("Jinsi");
+        private final CheckboxGroup<EmployeeRole> roles = new CheckboxGroup<>("Lavozim");
+        private final DatePicker holidayStartFrom = new DatePicker("Ta’til boshlanishi (dan)");
+        private final DatePicker holidayEndTo = new DatePicker("Ta’til tugashi (gacha)");
 
         public Filters(Runnable onSearch) {
             setWidthFull();
@@ -133,20 +174,20 @@ public class GridwithFiltersView extends Div {
                     LumoUtility.Padding.Vertical.MEDIUM,
                     LumoUtility.BoxSizing.BORDER);
 
-            name.setPlaceholder("First or Last name");
-            email.setPlaceholder("Email");
-            roles.setItems("EMPLOYEE", "ADMIN");
-            teams.setPlaceholder("Select teams");
+            nameField.setPlaceholder("Ism, Familiya yoki Otasining ismi");
+            department.setPlaceholder("Bo‘lim");
+            roles.setItems(EmployeeRole.values());
+            genders.setItems(Gender.values());
 
             Button resetBtn = new Button("Reset");
             resetBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
             resetBtn.addClickListener(e -> {
-                name.clear();
-                email.clear();
+                nameField.clear();
+                department.clear();
                 roles.clear();
-                teams.clear();
-                hiredFrom.clear();
-                hiredTo.clear();
+                genders.clear();
+                holidayStartFrom.clear();
+                holidayEndTo.clear();
                 onSearch.run();
             });
 
@@ -154,45 +195,52 @@ public class GridwithFiltersView extends Div {
             searchBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             searchBtn.addClickListener(e -> onSearch.run());
 
-            Div actions = new Div(resetBtn, searchBtn);
-            actions.addClassName(LumoUtility.Gap.SMALL);
-            actions.addClassName("actions");
+            HorizontalLayout actions = new HorizontalLayout(resetBtn, searchBtn);
+            actions.setSpacing(true);
 
-            add(name, email, teams, roles, createDateRangeFilter(), actions);
+            add(nameField, department, roles, genders, createHolidayRangeFilter(), actions);
         }
 
-        private Component createDateRangeFilter() {
-            hiredFrom.setPlaceholder("From");
-            hiredTo.setPlaceholder("To");
-
-            FlexLayout dateRange = new FlexLayout(hiredFrom, new Text(" – "), hiredTo);
+        private Component createHolidayRangeFilter() {
+            FlexLayout dateRange = new FlexLayout(holidayStartFrom, new Text(" – "), holidayEndTo);
             dateRange.setAlignItems(FlexComponent.Alignment.BASELINE);
             dateRange.addClassName(LumoUtility.Gap.XSMALL);
-
             return dateRange;
         }
 
         public boolean matches(EmployeeDto emp) {
             if (emp == null) return false;
-
             boolean match = true;
-            if (!name.isEmpty()) {
-                String filter = name.getValue().toLowerCase();
+
+            // Name filter includes first, last, and surName
+            if (!nameField.isEmpty()) {
+                String filter = nameField.getValue().toLowerCase();
                 match &= (emp.getFirstName() != null && emp.getFirstName().toLowerCase().contains(filter))
-                        || (emp.getLastName() != null && emp.getLastName().toLowerCase().contains(filter));
+                        || (emp.getLastName() != null && emp.getLastName().toLowerCase().contains(filter))
+                        || (emp.getSurName() != null && emp.getSurName().toLowerCase().contains(filter));
             }
-            if (!email.isEmpty()) {
-                match &= emp.getEmail() != null && emp.getEmail().toLowerCase().contains(email.getValue().toLowerCase());
-            }
+
             if (!roles.isEmpty()) {
-                match &= emp.getRole() != null && roles.getValue().contains(emp.getRole().toUpperCase());
+                match &= emp.getEmployeeRole() != null && roles.getValue().contains(emp.getEmployeeRole());
             }
-            if (hiredFrom.getValue() != null) {
-                match &= emp.getHiredAt() != null && !emp.getHiredAt().isBefore(hiredFrom.getValue());
+
+            if (!genders.isEmpty()) {
+                match &= emp.getGender() != null && genders.getValue().contains(emp.getGender());
             }
-            if (hiredTo.getValue() != null) {
-                match &= emp.getHiredAt() != null && !emp.getHiredAt().isAfter(hiredTo.getValue());
+
+            if (!department.isEmpty()) {
+                match &= emp.getDepartment() != null && emp.getDepartment().toLowerCase().contains(department.getValue().toLowerCase());
             }
+
+            // Holiday range filter
+            if (holidayStartFrom.getValue() != null) {
+                match &= emp.getHolidayStartDate() != null && !emp.getHolidayStartDate().isBefore(holidayStartFrom.getValue());
+            }
+
+            if (holidayEndTo.getValue() != null) {
+                match &= emp.getHolidayEndDate() != null && !emp.getHolidayEndDate().isAfter(holidayEndTo.getValue());
+            }
+
             return match;
         }
     }
