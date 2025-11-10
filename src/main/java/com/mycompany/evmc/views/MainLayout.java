@@ -7,14 +7,19 @@ import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Header;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
+import com.vaadin.flow.dom.ThemeList;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.server.menu.MenuConfiguration;
 import com.vaadin.flow.spring.security.AuthenticationContext;
+import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.i18n.I18NProvider;
@@ -47,19 +52,52 @@ public class MainLayout extends AppLayout implements AfterNavigationObserver {
         addHeaderContent();
     }
 
-    /** Yuqori menyu tarkibi */
     private void addHeaderContent() {
         DrawerToggle toggle = new DrawerToggle();
         toggle.setAriaLabel("Menyu almashtirish");
 
-        viewTitle = new H1();
+        viewTitle = new H1(getTranslation("app.title", "My-App"));
         viewTitle.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
 
-        Button logout = new Button("Chiqish", e -> auth.logout());
-        logout.addClassNames(LumoUtility.Margin.Left.AUTO);
+        // Theme toggle
+        Button themeToggle = new Button(new Icon("vaadin", "moon"));
+        themeToggle.setAriaLabel("Toggle dark/light theme");
+        themeToggle.addClickListener(e -> {
+            ThemeList themeList = UI.getCurrent().getElement().getThemeList();
+            if (themeList.contains(Lumo.DARK)) themeList.remove(Lumo.DARK);
+            else themeList.add(Lumo.DARK);
+        });
 
-        addToNavbar(true, toggle, viewTitle, logout);
+        // Language toggle
+        Button langToggle = new Button(UI.getCurrent().getLocale().getLanguage().equals("en") ? "EN" : "UZ");
+        langToggle.setAriaLabel("Toggle language");
+        langToggle.addClickListener(e -> {
+            UI ui = UI.getCurrent();
+            Locale current = ui.getLocale();
+            if ("en".equals(current.getLanguage())) {
+                ui.setLocale(new Locale("uz"));
+                langToggle.setText("UZ");
+            } else {
+                ui.setLocale(new Locale("en"));
+                langToggle.setText("EN");
+            }
+            ui.getPage().reload();
+        });
+
+        // Logout button
+        Button logout = new Button("Chiqish", e -> auth.logout());
+
+        // Put everything in one HorizontalLayout
+        HorizontalLayout headerLayout = new HorizontalLayout(toggle, viewTitle, themeToggle, langToggle, logout);
+        headerLayout.setWidthFull();
+        headerLayout.expand(viewTitle); // makes viewTitle take all space, pushing logout to right
+        headerLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+        headerLayout.setPadding(false);
+        headerLayout.setSpacing(true); // optional spacing between buttons
+
+        addToNavbar(headerLayout);
     }
+
 
     /** Yon menyu tarkibi */
     private void addDrawerContent() {

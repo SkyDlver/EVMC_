@@ -3,11 +3,9 @@ package com.mycompany.evmc.service.impl;
 import com.mycompany.evmc.dto.EmployeeDto;
 import com.mycompany.evmc.mapper.EmployeeMapper;
 import com.mycompany.evmc.model.Employee;
-import com.mycompany.evmc.model.Role;
 import com.mycompany.evmc.repository.EmployeeRepository;
 import com.mycompany.evmc.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -21,7 +19,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final EmployeeMapper employeeMapper;
-    private final PasswordEncoder passwordEncoder;
 
     @Override
     public List<EmployeeDto> getAllEmployees() {
@@ -36,25 +33,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public EmployeeDto createEmployee(EmployeeDto employeeDto) {
-        if (employeeRepository.findByEmail(employeeDto.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email already registered");
-        }
-
-        // Map DTO to entity
-        Employee employee = employeeMapper.toEntity(employeeDto);
-
-        // Set employee number and hired date
-        employee.setHiredAt(employee.getHiredAt() != null ? employee.getHiredAt() : LocalDate.now());
-
-        // Handle password
-        if (employeeDto.getPassword() != null && !employeeDto.getPassword().isEmpty()) {
-            employee.setPasswordHash(passwordEncoder.encode(employeeDto.getPassword()));
-        }
-
+    public EmployeeDto createEmployee(EmployeeDto dto) {
+        Employee employee = employeeMapper.toEntity(dto);
+        employee.setHiredAt(dto.getHiredAt() != null ? dto.getHiredAt() : LocalDate.now());
         Employee saved = employeeRepository.save(employee);
         return employeeMapper.toDto(saved);
     }
+
 
 
     @Override
@@ -64,13 +49,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         existing.setFirstName(employeeDto.getFirstName());
         existing.setLastName(employeeDto.getLastName());
-        existing.setEmail(employeeDto.getEmail());
-        existing.setRole(Role.valueOf(employeeDto.getRole()));
-
-        // Update password if provided
-        if (employeeDto.getPassword() != null && !employeeDto.getPassword().isEmpty()) {
-            existing.setPasswordHash(passwordEncoder.encode(employeeDto.getPassword()));
-        }
 
         Employee updated = employeeRepository.save(existing);
         return employeeMapper.toDto(updated);
@@ -80,13 +58,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public void deleteEmployee(UUID id) {
         employeeRepository.deleteById(id);
-    }
-
-
-    @Override
-    public Employee findByEmail(String email) {
-        return employeeRepository.findByEmail(email)
-                .orElseThrow(() -> new NoSuchElementException("Employee not found with email: " + email));
     }
 
 

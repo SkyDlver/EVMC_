@@ -19,8 +19,6 @@ public interface EmployeeService {
 
     void deleteEmployee(UUID id);
 
-    Employee findByEmail(String username);
-
     // ✅ New holiday methods
     void startHoliday(UUID id, LocalDate startDate, LocalDate endDate);
     void endHoliday(UUID id);

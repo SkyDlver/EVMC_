@@ -27,15 +27,14 @@ public class Employee {
     @Column(nullable = false)
     private String lastName;
 
-    @Column(unique = true, nullable = false)
-    private String email;
-
     @Column(nullable = false)
-    private String passwordHash;
+    private String surName;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role;
+    @Column(nullable = true)
+    private Gender gender;
+
+    private String department;
 
     private LocalDate hiredAt;
 
